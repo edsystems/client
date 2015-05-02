@@ -7,6 +7,8 @@ import com.eds.client.MyEdsClient;
 public class DesktopLauncher {
 	public static void main (String[] arg) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
-		new LwjglApplication(new MyEdsClient(), config);
+        config.width = 480;
+        config.height = 840;
+		new LwjglApplication(new MyEdsClient(new DesktopPlatform()), config);
 	}
 }
