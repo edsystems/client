@@ -2,13 +2,22 @@ package com.eds.client;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Scaling;
+import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.building.GridTableBuilder;
@@ -23,52 +32,97 @@ import com.kotcrab.vis.ui.widget.VisTextField;
 
 public class MyEdsClient extends ApplicationAdapter {
 
+    public static final String LOG_TAG = "EdsClient";
+
+    private Platform platform;
+
+    private Array<String> filters = new Array<String>(new String[] {"Filtro1", "Filtro2"});
     private Stage stage;
-	
+
+    public MyEdsClient(Platform platform) {
+        this.platform = platform;
+    }
+
 	@Override
 	public void create () {
         Gdx.gl.glClearColor(0.3f, 0.3f, 0.3f, 1);
-		stage = new Stage(new ScreenViewport());
+		//stage = new Stage(new ExtendViewport(480, 840));
+        stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
 
         VisUI.load();
-        RowLayout rowLayout = new RowLayout(new Padding(0, 0, 0, 5));
+        Gdx.app.log(MyEdsClient.LOG_TAG, "Skin textures: ");
+        for (Texture texture : VisUI.getSkin().getAtlas().getTextures()) {
+            Gdx.app.log(MyEdsClient.LOG_TAG, "texture = " + texture);
+            texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        }
 
-        final VisCheckBox debugViewCheckBox = new VisCheckBox("hello world");
-        debugViewCheckBox.addListener(new ChangeListener() {
+        float defaultSpace = 40f;
+        Table table = new Table();
+
+        final Image image = new Image();
+        image.setScaling(Scaling.fit);
+        table.add(image).space(defaultSpace).pad(defaultSpace);
+        table.row();
+
+        final Platform.FileListener listener = new Platform.FileListener() {
             @Override
-            public void changed (ChangeEvent event, Actor actor) {
+            public void fileChosen(String path) {
+                if(path != null && !path.trim().isEmpty()) {
+                    FileHandle fileHandle = Gdx.files.absolute(path);
+                    if(fileHandle.exists() && !fileHandle.isDirectory()) {
+                        Drawable drawable = image.getDrawable();
+                        if (drawable instanceof TextureRegionDrawable) {
+                            TextureRegionDrawable textureDrawable = (TextureRegionDrawable) drawable;
+                            textureDrawable.getRegion().getTexture().dispose();
+                        }
+                        Texture texture = new Texture(fileHandle);
+                        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+                        TextureRegionDrawable imageDrawable = new TextureRegionDrawable(new TextureRegion(texture));
+                        image.setDrawable(imageDrawable);
+                    }
+                }
+            }
 
+        };
+
+        TextButton choose = new TextButton("Choose an image", VisUI.getSkin());
+        choose.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                platform.chooseImage(listener);
+            }
+        });
+        table.add(choose).space(defaultSpace).pad(defaultSpace).expand().fill();
+        table.row();
+
+        ButtonGroup group = new ButtonGroup();
+        for (String filter : filters) {
+            VisCheckBox filterCheckBox = new VisCheckBox(filter);
+            filterCheckBox.addListener(new ChangeListener() {
+                @Override
+                public void changed (ChangeEvent event, Actor actor) {
+
+                }
+            });
+            group.add(filterCheckBox);
+            table.add(filterCheckBox);
+            table.row();
+        }
+
+        TextButton process = new TextButton("Process", VisUI.getSkin());
+        table.add(process).space(defaultSpace).pad(defaultSpace).expand().fill();
+        process.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                // TODO send the processed file
             }
         });
 
-        final Padding padding = new Padding(2, 3);
-        GridTableBuilder builder = new GridTableBuilder(padding, 2);
-
-        builder.append(debugViewCheckBox);
-        builder.row();
-
-        builder.append(new VisLabel("title label"));
-        builder.row();
-
-        builder.append(new VisLabel("path"));
-        builder.append(rowLayout, CellWidget.builder().fillX(),
-                CellWidget.of(new VisTextField()).expandX().fillX().wrap(),
-                CellWidget.of(new VisTextButton("choose")).padding(new Padding(0, 0)).wrap());
-        builder.row();
-
-        builder.append(new VisLabel("name"));
-        builder.append(CellWidget.of(new VisTextField()).expandX().fillX().wrap());
-        builder.row();
-
-        builder.append(new VisLabel("description"));
-        builder.append(CellWidget.of(new VisTextField()).fillX().wrap());
-        builder.row();
-
-        Table table = builder.build();
-        table.setFillParent(true);
-        stage.addActor(table);
-
+        ScrollPane pane = new ScrollPane(table);
+        pane.setFillParent(true);
+        pane.setScrollingDisabled(true, false);
+        stage.addActor(pane);
 	}
 
 
