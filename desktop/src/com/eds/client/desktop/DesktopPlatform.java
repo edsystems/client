@@ -8,6 +8,9 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
 public class DesktopPlatform implements Platform {
 
@@ -32,6 +35,18 @@ public class DesktopPlatform implements Platform {
             listener.fileChosen(fileOpen.getSelectedFile().getAbsolutePath());
         } else {
             listener.fileChosen(null);
+        }
+    }
+
+    @Override
+    public void showImage(String path) {
+        try {
+            BufferedImage img = ImageIO.read(new File(path));
+            ImageIcon icon = new ImageIcon(img);
+            JLabel label = new JLabel(icon);
+            JOptionPane.showMessageDialog(null, label);
+        } catch (IOException e) {
+            Gdx.app.error(MyEdsClient.LOG_TAG, "Error showing image!", e);
         }
     }
 }

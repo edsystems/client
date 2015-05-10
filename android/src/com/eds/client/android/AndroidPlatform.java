@@ -33,6 +33,14 @@ public class AndroidPlatform implements Platform {
         selectImage(listener, intent);
     }
 
+    @Override
+    public void showImage(String path) {
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_VIEW);
+        intent.setDataAndType(Uri.fromFile(Gdx.files.absolute(path).file()), "image/*");
+        ((AndroidLauncher) Gdx.app).startActivity(intent);
+    }
+
     private void selectImage(FileListener listener, Intent intent) {
 
         AndroidLauncher activity = (AndroidLauncher) Gdx.app;
