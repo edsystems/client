@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -46,8 +47,8 @@ public class MyEdsClient extends ApplicationAdapter {
 	@Override
 	public void create () {
         Gdx.gl.glClearColor(0.3f, 0.3f, 0.3f, 1);
-		//stage = new Stage(new ExtendViewport(480, 840));
-        stage = new Stage(new ScreenViewport());
+		stage = new Stage(new ExtendViewport(480, 800));
+        //stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
 
         VisUI.load();
@@ -58,11 +59,19 @@ public class MyEdsClient extends ApplicationAdapter {
         }
 
         float defaultSpace = 40f;
+        float halfSpace = defaultSpace * .5f;
         Table table = new Table();
 
         final Image image = new Image();
+        image.setUserObject("");
+        image.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                platform.showImage(image.getUserObject().toString());
+            }
+        });
         image.setScaling(Scaling.fit);
-        table.add(image).space(defaultSpace).pad(defaultSpace);
+        table.add(image).pad(defaultSpace).maxHeight(Value.percentWidth(1, table));
         table.row();
 
         final Platform.FileListener listener = new Platform.FileListener() {
@@ -80,6 +89,7 @@ public class MyEdsClient extends ApplicationAdapter {
                         texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
                         TextureRegionDrawable imageDrawable = new TextureRegionDrawable(new TextureRegion(texture));
                         image.setDrawable(imageDrawable);
+                        image.setUserObject(path);
                     }
                 }
             }
@@ -93,7 +103,7 @@ public class MyEdsClient extends ApplicationAdapter {
                 platform.chooseImage(listener);
             }
         });
-        table.add(choose).space(defaultSpace).pad(defaultSpace).expand().fill();
+        table.add(choose).space(defaultSpace).pad(defaultSpace).expand().fill().minHeight(defaultSpace);
         table.row();
 
         ButtonGroup group = new ButtonGroup();
@@ -106,12 +116,12 @@ public class MyEdsClient extends ApplicationAdapter {
                 }
             });
             group.add(filterCheckBox);
-            table.add(filterCheckBox);
+            table.add(filterCheckBox).space(halfSpace);
             table.row();
         }
 
         TextButton process = new TextButton("Process", VisUI.getSkin());
-        table.add(process).space(defaultSpace).pad(defaultSpace).expand().fill();
+        table.add(process).space(defaultSpace).pad(defaultSpace).expand().fill().minHeight(defaultSpace);
         process.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -125,35 +135,12 @@ public class MyEdsClient extends ApplicationAdapter {
         stage.addActor(pane);
 	}
 
-
-    private class RowLayout implements ActorLayout {
-        private Padding padding;
-
-        public RowLayout (Padding padding) {
-            this.padding = padding;
-        }
-
-        @Override
-        public Actor convertToActor (Actor... widgets) {
-            return convertToActor(CellWidget.wrap(widgets));
-        }
-
-        @Override
-        public Actor convertToActor (CellWidget<?>... widgets) {
-            OneRowTableBuilder builder = new OneRowTableBuilder(padding);
-
-            for (CellWidget<?> widget : widgets)
-                builder.append(widget);
-
-            return builder.build();
-        }
-    }
-
 	@Override
 	public void render () {
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         stage.act();
         stage.draw();
+
 	}
 
     @Override
